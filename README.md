@@ -11,9 +11,9 @@ It is a sibling of the
 and follows the same playbook: headless `PASS/FAIL/SKIP` deep-dive harnesses per
 surface, plus a Flutter web client with one screen per feature.
 
-> **Status:** in progress. The smoke CLI (`bin/smoke.dart`) and the first
-> per-surface deep-dive (`bin/auth_deepdive.dart`) are in place; remaining
-> per-surface deep-dives and the Flutter client are next.
+> **Status:** in progress. The smoke CLI (`bin/smoke.dart`) and two per-surface
+> deep-dives — auth/users (`bin/auth_deepdive.dart`) and the doc product
+> (`bin/technidox_deepdive.dart`) — are in place; the Flutter client is next.
 
 ---
 
@@ -88,6 +88,12 @@ dart run bin/auth_deepdive.dart    # deep on the auth/users surface
 - **`bin/auth_deepdive.dart`** — `/health` + the full auth/users surface:
   login, `/me` (get + update), `/me/tenant`, roles, team members, users,
   pending invites, the avatar lifecycle (set / view / remove), and logout.
+- **`bin/technidox_deepdive.dart`** — the customer documentation product
+  (`/api/v1/technidox`). Today that is the workspace `/overview` endpoint, so
+  the deep-dive does a thorough contract check of its response (doc health
+  score, health breakdown, release policy, planned tables, phase-one plan).
+  When Phase-1 endpoints land (sources, gates, drift, compliance reports), they
+  slot in here.
 
 Both authenticate via Firebase Identity Toolkit first (like the DartStream
 sample). Without `FIREBASE_API_KEY` + test creds, `/health` still PASSes and the
