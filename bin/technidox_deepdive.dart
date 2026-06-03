@@ -57,7 +57,7 @@ void main(List<String> args) async {
   ];
 
   if (idToken == null) {
-    _skip('product', 'POST /api/v1/auth/login (bootstrap)');
+    _skip('product', 'POST /api/v1/auth/login (bootstrap, signup fallback)');
     _skip('product', 'GET  /api/v1/technidox/overview');
     for (final c in checks) {
       _skip(c[0], c[1]);
@@ -66,12 +66,10 @@ void main(List<String> args) async {
     exit(_results.any((r) => r.pass == false) ? 1 : 0);
   }
 
-  // bootstrap tenant
-  await _step('POST /api/v1/auth/login (bootstrap)', 'product', () {
-    return http.post(Uri.parse('$base/api/v1/auth/login'),
-        headers: const {'content-type': 'application/json'},
-        body: jsonEncode({'idToken': idToken}));
-  }, allow: const [200, 201], onBody: (b) {
+  // bootstrap tenant (login, signup fallback for first-run users)
+  await _step('POST /api/v1/auth/login (bootstrap, signup fallback)', 'product',
+      () => _onboard(base, idToken!),
+      allow: const [200, 201], onBody: (b) {
     final t = _extractTenant(b);
     if (t != null) tenant = t;
   });
@@ -169,6 +167,19 @@ Future<void> _step(
     print('   [FAIL] $e');
     _results.add(_Result(group, label, false, note: '$e'));
   }
+}
+
+/// Onboard the verified identity: try /login, fall back to /signup for a
+/// first-run user that isn't onboarded yet. Returns whichever succeeded.
+Future<http.Response> _onboard(String base, String idToken) async {
+  final body = jsonEncode({'idToken': idToken});
+  const h = {'content-type': 'application/json'};
+  final login =
+      await http.post(Uri.parse('$base/api/v1/auth/login'), headers: h, body: body);
+  if (login.statusCode == 200 || login.statusCode == 201) return login;
+  final signup =
+      await http.post(Uri.parse('$base/api/v1/auth/signup'), headers: h, body: body);
+  return (signup.statusCode == 200 || signup.statusCode == 201) ? signup : login;
 }
 
 String? _extractTenant(String body) {

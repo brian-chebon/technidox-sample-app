@@ -45,7 +45,7 @@ void main(List<String> args) async {
 
   if (idToken == null) {
     for (final s in const [
-      ['POST /api/v1/auth/login', 'auth'],
+      ['POST /api/v1/auth/login (signup fallback)', 'auth'],
       ['GET  /api/v1/me', 'users'],
       ['PUT  /api/v1/me', 'users'],
       ['GET  /api/v1/me/tenant', 'users'],
@@ -64,12 +64,10 @@ void main(List<String> args) async {
     exit(_results.any((r) => r.pass == false) ? 1 : 0);
   }
 
-  // onboard / sign in
-  await _step('POST /api/v1/auth/login', 'auth', () {
-    return http.post(Uri.parse('$base/api/v1/auth/login'),
-        headers: const {'content-type': 'application/json'},
-        body: jsonEncode({'idToken': idToken}));
-  }, allow: const [200, 201], onBody: (b) {
+  // onboard / sign in (login, signup fallback for first-run users)
+  await _step('POST /api/v1/auth/login (signup fallback)', 'auth',
+      () => _onboard(base, idToken!),
+      allow: const [200, 201], onBody: (b) {
     final t = _extractTenant(b);
     if (t != null) tenant = t;
   });
@@ -161,6 +159,19 @@ Future<void> _step(
     print('   [FAIL] $e');
     _results.add(_Result(group, label, false, note: '$e'));
   }
+}
+
+/// Onboard the verified identity: try /login, fall back to /signup for a
+/// first-run user that isn't onboarded yet. Returns whichever succeeded.
+Future<http.Response> _onboard(String base, String idToken) async {
+  final body = jsonEncode({'idToken': idToken});
+  const h = {'content-type': 'application/json'};
+  final login =
+      await http.post(Uri.parse('$base/api/v1/auth/login'), headers: h, body: body);
+  if (login.statusCode == 200 || login.statusCode == 201) return login;
+  final signup =
+      await http.post(Uri.parse('$base/api/v1/auth/signup'), headers: h, body: body);
+  return (signup.statusCode == 200 || signup.statusCode == 201) ? signup : login;
 }
 
 String? _extractTenant(String body) {
