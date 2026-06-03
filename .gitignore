@@ -1,0 +1,16 @@
+# Secrets — never commit the filled-in env
+.env
+
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
