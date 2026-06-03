@@ -1,0 +1,9 @@
+name: technidox_smoke
+description: End-to-end smoke + per-surface deep-dive CLIs for the TechniDox API.
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  http: ^1.2.2

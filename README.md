@@ -11,8 +11,9 @@ It is a sibling of the
 and follows the same playbook: headless `PASS/FAIL/SKIP` deep-dive harnesses per
 surface, plus a Flutter web client with one screen per feature.
 
-> **Status:** scaffolding. Config template + repo wiring are in place; the smoke
-> CLI, per-surface deep-dive harnesses, and Flutter client are next.
+> **Status:** in progress. The smoke CLI (`bin/smoke.dart`) and the first
+> per-surface deep-dive (`bin/auth_deepdive.dart`) are in place; remaining
+> per-surface deep-dives and the Flutter client are next.
 
 ---
 
@@ -68,6 +69,30 @@ set -a && source .env && set +a
 
 The real values live only in your gitignored `.env`; the tracked `.env.example`
 carries placeholders only.
+
+---
+
+## Running the harnesses
+
+```sh
+cp .env.example .env            # optional: fill FIREBASE_API_KEY + test creds
+set -a && source .env && set +a
+dart pub get
+dart run bin/smoke.dart            # one endpoint per surface
+dart run bin/auth_deepdive.dart    # deep on the auth/users surface
+```
+
+- **`bin/smoke.dart`** — `/health` (unauth) + one authed probe per surface:
+  `/api/v1/auth/login`, `/api/v1/me`, `/api/v1/technidox/dashboard/stats`,
+  `/api/v1/billing/subscription`.
+- **`bin/auth_deepdive.dart`** — `/health` + the full auth/users surface:
+  login, `/me` (get + update), `/me/tenant`, roles, team members, users,
+  pending invites, the avatar lifecycle (set / view / remove), and logout.
+
+Both authenticate via Firebase Identity Toolkit first (like the DartStream
+sample). Without `FIREBASE_API_KEY` + test creds, `/health` still PASSes and the
+authed steps SKIP — so a keyless run confirms connectivity. (Confirmed live:
+`/health` → 200.)
 
 ---
 
